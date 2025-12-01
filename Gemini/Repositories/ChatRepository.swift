@@ -38,4 +38,9 @@ actor ChatRepository {
     func sendAndStream(_ text: String) async -> AsyncThrowingStream<String, Error> {
         return await service.streamResponse(text)
     }
+    
+    func clearHistory() {
+        try? backgroundContext.delete(model: PersistedMessage.self)
+        try? backgroundContext.save()
+    }
 }

@@ -48,13 +48,24 @@ final class ChatViewModel {
                 // ai message is the last one we just added
                 // messages.firstIndex(where:{$0.id == aiMsg.id}) is O(n) time
                 if !messages.isEmpty {
-                    messages[-1].content = .text(aiContent)
+                    messages[messages.count - 1].content = .text(aiContent)
                 }
+            }
+            
+            if let lastMessage = messages.last {
+                await repository.save(lastMessage)
             }
         } catch {
             print("Stream failed")
         }
         
         isStreaming = false
+    }
+    
+    func clearHistory() {
+        Task {
+            await repository.clearHistory()
+            self.messages = []
+        }
     }
 }
