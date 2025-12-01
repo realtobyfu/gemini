@@ -21,7 +21,7 @@ struct GeminiApp: App {
         }
         
         
-        let service = RealChatService()
+        let service = BackendChatService()
         let repository = ChatRepository(service: service, container: container)
         viewModel = ChatViewModel(repository: repository)
     }
