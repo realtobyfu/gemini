@@ -17,7 +17,7 @@ struct MockChatService: ChatService {
     func streamResponse(_ text: String) -> AsyncThrowingStream<String, Error> {
         return AsyncThrowingStream { continuation in
             Task {
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                try? await Task.sleep(for: .seconds(5))
             
                 let response = "Hi I am Gemini, written in Swift, ask me about anything."
                 
@@ -71,7 +71,7 @@ struct SimpleFoundationChatService: ChatService {
 struct BackendChatService: ChatService {
     func streamResponse(_ text: String) -> AsyncThrowingStream<String, Error> {
         return AsyncThrowingStream { continuation in
-            Task {
+            let task = Task {
                 let url = URL(string: "http://127.0.0.1:8000/chat")!
                 var request = URLRequest(url: url)
                 request.httpMethod = "POST"
@@ -100,6 +100,10 @@ struct BackendChatService: ChatService {
                 } catch {
                     continuation.finish(throwing: error)
                 }
+            }
+            
+            continuation.onTermination = { @Sendable _ in
+                task.cancel()
             }
         }
     }

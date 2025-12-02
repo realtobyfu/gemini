@@ -16,6 +16,7 @@ final class ChatViewModel {
     var isStreaming: Bool = false
     
     private let repository: ChatRepository
+    private var currentTask: Task<Void, Never>?
     
     init(repository: ChatRepository) {
         self.repository = repository
@@ -28,7 +29,18 @@ final class ChatViewModel {
         }
     }
     
-    func sendMessage(_ text: String) async {
+    func sendMessage(_ text: String) {
+        currentTask = Task { @MainActor in
+            await sendMessageTask(text)
+        }
+    }
+    
+    func stopGeneration() {
+        currentTask?.cancel()
+        isStreaming = false
+    }
+    
+    private func sendMessageTask(_ text: String) async {
         let userMsg = ChatMessage(
             id: UUID(), timestamp: Date(), sender: .user, content: .text(text), status: .sending
         )
@@ -44,9 +56,9 @@ final class ChatViewModel {
         do {
             let stream = await repository.sendAndStream(text)
             for try await token in stream {
+                if Task.isCancelled { break }
                 aiContent += token
-                // ai message is the last one we just added
-                // messages.firstIndex(where:{$0.id == aiMsg.id}) is O(n) time
+                
                 if !messages.isEmpty {
                     messages[messages.count - 1].content = .text(aiContent)
                 }
@@ -66,6 +78,13 @@ final class ChatViewModel {
         Task {
             await repository.clearHistory()
             self.messages = []
+        }
+    }
+    
+    func deleteFrom(_ message: ChatMessage) {
+        Task {
+            await repository.deleteMessages(from: message.timestamp)
+            self.messages.removeAll { $0.timestamp >= message.timestamp }
         }
     }
 }

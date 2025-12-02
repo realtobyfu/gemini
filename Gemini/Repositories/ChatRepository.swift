@@ -43,4 +43,16 @@ actor ChatRepository {
         try? backgroundContext.delete(model: PersistedMessage.self)
         try? backgroundContext.save()
     }
+    
+    func deleteMessages(from date: Date) {
+        let descriptor = FetchDescriptor<PersistedMessage>(
+            predicate: #Predicate { $0.timestamp >= date }
+        )
+        if let messages = try? backgroundContext.fetch(descriptor) {
+            for message in messages {
+                backgroundContext.delete(message)
+            }
+            try? backgroundContext.save()
+        }
+    }
 }
