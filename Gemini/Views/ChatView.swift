@@ -123,15 +123,15 @@ struct MessageBubble: View {
     }
     
     private func formattedText(_ text: String) -> String {
-        // Replace "* " with "• " for bullet points
-        // Handle start of string
-        var formatted = text
-        if formatted.hasPrefix("* ") {
-            formatted = "• " + formatted.dropFirst(2)
-        }
-        // Handle newlines
-        formatted = formatted.replacingOccurrences(of: "\n* ", with: "\n• ")
-        return formatted
+        // (?m) = multiline mode: ^ and $ work per line
+        // ^(\s*)\*  = start of line, capture leading whitespace, then a literal "* "
+        let pattern = #"(?m)^(\s*)\* "#
+        
+        return text.replacingOccurrences(
+            of: pattern,
+            with: "$1• ",                // keep the same indentation, swap * for •
+            options: .regularExpression
+        )
     }
 }
 
